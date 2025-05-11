@@ -283,7 +283,7 @@ io.use((socket, next) => {
             }
 
             // Optionally, emit room joined confirmation to both
-            io.to(roomId).emit('room-joined', { roomId, users: [userDoc.username, searchUser.username] });
+            socket.emit('room-joined', { roomId, users: [userDoc.username, searchUser.username] });
 
 
         }catch(error){

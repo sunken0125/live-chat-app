@@ -18,8 +18,13 @@ export default function Chat() {
   const handleJoin = async ()=>{
     if(!socket) return;
 
-    socket.emit('join-room',newUser);
+    try
+    {
+      socket.emit('join-room',newUser);
     setNewUser('');
+    }catch(err){
+    console.error(err);
+    }
     
   }
 
