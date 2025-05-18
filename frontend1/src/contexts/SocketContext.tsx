@@ -31,7 +31,7 @@ export const SocketProvider = ({ children }: Props) => {
 
   useEffect(() => {
     if (!loading && accessToken) {
-      const newSocket: Socket = io("http://localhost:4000", {
+      const newSocket: Socket = io("https://live-chat-app-jf3p.onrender.com/", {
         auth: {
           token: accessToken,
         },
