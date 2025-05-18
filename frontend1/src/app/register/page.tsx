@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, FormEvent} from 'react';
 import React from 'react'
 import api from '../../lib/api'
 import { useAuth } from '@/contexts/authContext';
@@ -18,9 +18,9 @@ export default function Register() {
             if(!loading && accessToken){
                 router.push('/chat');
             }
-        },[accessToken,loading]);
+        },[accessToken,loading,router]);
    
-      const handleSubmit = async (e) => {
+      const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setUsername("");
         setPassword("");
@@ -28,8 +28,13 @@ export default function Register() {
           const res = await api.post('/register', { username, password });
           console.log('User created:', res.data.message);
           
-        } catch (error) {
-          console.error('Error creating user:', error.message);
+        } catch (error:unknown) {
+          if (error instanceof Error) {
+          console.error('Error logging in:', error.message);
+          } else {
+            console.error('Error logging in:', error);
+          }
+          
         }
       };
      
@@ -39,12 +44,12 @@ export default function Register() {
   return (
     <div>
         <h1>Enter the login details</h1>
-        <form>
+        <form onSubmit={handleSubmit}>
             <label htmlFor="username">Username:</label>
             <input value={username} type="text" id="username" name="username" placeholder='username...' onChange={(e)=>setUsername(e.target.value)} required /><br/>
             <label htmlFor="password">Password:</label>
             <input value={password} type="password" id="password" name="password" placeholder='password....' onChange={(e)=>setPassword(e.target.value)} required /><br/>
-            <button type="submit" onClick={handleSubmit}>Register</button><br/>
+            <button type="submit" >Register</button><br/>
             <p>Already have an account? <a href="/login">Login here</a></p>
             </form>
     </div>

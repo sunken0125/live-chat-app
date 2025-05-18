@@ -42,7 +42,7 @@ export default function Chat() {
     <ProtectedRoute>
       <div>
       
-      <h2>Hey {username}, Let's chat!!</h2>
+      <h2>Hey {username}, {"Let's chat!!"}</h2>
       
       <input value={newUser} onChange={(e)=>setNewUser(e.target.value)} placeholder="enter Username"></input>
       <button onClick={handleJoin}>Search</button>

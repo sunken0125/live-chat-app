@@ -120,7 +120,7 @@ export const SocketProvider = ({ children }: Props) => {
         socketRef.current = null;
       };
     }
-  }, [accessToken, loading, refreshAccessToken]);
+  }, [accessToken, loading, refreshAccessToken,router]);
 
   return (
     <SocketContext.Provider

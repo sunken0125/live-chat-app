@@ -53,7 +53,9 @@ function generateRefreshToken(user){
     return jwt.sign({ _id: user._id }, JWT_refresh_SECRET_KEY, { expiresIn: '30d' });
 }
 
-
+app.get('/ping',(req,res)=>{
+  res.send('server is alive')
+});
 
 app.post('/register', async (req, res) => {
   const { username, password } = req.body;

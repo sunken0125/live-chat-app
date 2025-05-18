@@ -1,27 +1,44 @@
 "use client";
 
-import  { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './app.css';
 import { Calendar, Moon, BarChart2, Feather, Sun, Volume2, VolumeX, Music } from 'lucide-react';
-import { ProtectedRoute ,useAuth} from '@/contexts/authContext';
+import { ProtectedRoute, useAuth } from '@/contexts/authContext';
 import { useRouter } from 'next/navigation';
 
-export default function PersonalPage() {
-  const [thought, setThought] = useState('');
-  const [mood, setMood] = useState(3); // 1-5 scale
-  const [entries, setEntries] = useState([]);
-  const [activeTab, setActiveTab] = useState('journal');
-  const [quote, setQuote] = useState({});
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isMusicPlaying, setIsMusicPlaying] = useState(false);
-  const canvasRef = useRef(null);
-  const audioRef = useRef(null);
-//   const {loading,accessToken}= useAuth();
-//   const router= useRouter();
+// Define types for our data structures
+interface Entry {
+  id: number;
+  date: string;
+  thought: string;
+  mood: number;
+}
 
+interface Quote {
+  text: string;
+  author: string;
+}
+
+// Define color mappings type
+interface ColorMapping {
+  [key: number]: string;
+}
+
+export default function PersonalPage() {
+  const [thought, setThought] = useState<string>('');
+  const [mood, setMood] = useState<number>(3); // 1-5 scale
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [activeTab, setActiveTab] = useState<'journal' | 'history' | 'trends'>('journal');
+  const [quote, setQuote] = useState<Quote>({ text: '', author: '' });
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [isMusicPlaying, setIsMusicPlaying] = useState<boolean>(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // const {loading, accessToken} = useAuth();
+  // const router = useRouter();
 
   // Daily quotes with Japanese philosophy themes
-  const quotes = [
+  const quotes: Quote[] = [
     { text: "In the silence between thoughts, find peace.", author: "Zen Proverb" },
     { text: "The world is but a canvas to our imagination.", author: "Wabi-sabi Philosophy" },
     { text: "Imperfection is the essence of everything.", author: "Wabi-sabi Teaching" },
@@ -85,9 +102,10 @@ export default function PersonalPage() {
 
   // Particle animation setup
   useEffect(() => {
-    if(!canvasRef) return;
+    if (!canvasRef.current) return;
     const canvas = canvasRef.current;
-    const ctx = canvas?.getContext('2d');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     
     const resizeCanvas = () => {
       canvas.width = window.innerWidth;
@@ -96,10 +114,21 @@ export default function PersonalPage() {
     
     resizeCanvas();
     
-    const particles = [];
+    const particles: Particle[] = [];
     const particleCount = Math.min(50, Math.floor(window.innerWidth / 30)); // Responsive particle count
     
     class Particle {
+      x: number;
+      y: number;
+      size: number;
+      minSize: number;
+      speedX: number;
+      speedY: number;
+      opacity: number;
+      fadeRate: number;
+      respawnChance: number;
+      baseColor: [number, number, number];
+
       constructor() {
         this.x = Math.random() * canvas.width;
         this.y = Math.random() * canvas.height;
@@ -145,6 +174,7 @@ export default function PersonalPage() {
       }
       
       draw() {
+        if (!ctx) return;
         const [r, g, b] = this.baseColor;
         ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${this.opacity})`;
         ctx.beginPath();
@@ -161,6 +191,7 @@ export default function PersonalPage() {
     }
     
     function animate() {
+      if (!ctx || !canvas) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (let i = 0; i < particles.length; i++) {
         particles[i].update();
@@ -180,14 +211,14 @@ export default function PersonalPage() {
     return () => {
       window.removeEventListener('resize', resizeCanvas);
     };
-  }, [isDarkMode,canvasRef]);
+  }, [isDarkMode]);
 
   // Handle journal entry submission
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!thought.trim()) return;
     
-    const newEntry = {
+    const newEntry: Entry = {
       id: Date.now(),
       date: new Date().toISOString(),
       thought,
@@ -210,8 +241,8 @@ export default function PersonalPage() {
   };
 
   // Generate color based on mood and theme
-  const getMoodColor = (moodValue) => {
-    const lightColors = {
+  const getMoodColor = (moodValue: number): string => {
+    const lightColors: ColorMapping = {
       1: '#564872', // Dark purple (sad)
       2: '#6e5c9c', // Medium-dark purple
       3: '#8a6bc1', // Medium purple (neutral)
@@ -219,7 +250,7 @@ export default function PersonalPage() {
       5: '#d8c3ff'  // Very light purple (happy)
     };
     
-    const darkColors = {
+    const darkColors: ColorMapping = {
       1: '#2d2440', // Very dark purple (sad)
       2: '#3a2b5e', // Dark purple
       3: '#4e3b80', // Medium-dark purple (neutral)
@@ -231,7 +262,7 @@ export default function PersonalPage() {
   };
 
   // Format date to display
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
       month: 'short', 
@@ -246,216 +277,215 @@ export default function PersonalPage() {
 
   return (
     <ProtectedRoute>
-        <div className={`min-h-screen font-sans relative overflow-hidden transition-colors duration-300 ${
-      isDarkMode ? 'bg-purple-950 text-purple-100' : 'bg-purple-50 text-purple-900'
-    }`}>
-      <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none" />
-      
-      <div className="container mx-auto px-4 py-8 relative z-10">
-        <div className="flex justify-end space-x-2 mb-4">
-          <button 
-            onClick={toggleMusic}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-purple-800 hover:bg-purple-700' : 'bg-purple-200 hover:bg-purple-300'} transition-colors`}
-            aria-label={isMusicPlaying ? "Pause music" : "Play music"}
-          >
-            {isMusicPlaying ? <Volume2 size={18} /> : <VolumeX size={18} />}
-          </button>
-          <button 
-            onClick={toggleTheme}
-            className={`p-2 rounded-full ${isDarkMode ? 'bg-purple-800 hover:bg-purple-700' : 'bg-purple-200 hover:bg-purple-300'} transition-colors`}
-            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-        </div>
+      <div className={`min-h-screen font-sans relative overflow-hidden transition-colors duration-300 ${
+        isDarkMode ? 'bg-purple-950 text-purple-100' : 'bg-purple-50 text-purple-900'
+      }`}>
+        <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none" />
         
-        <header className="text-center mb-8">
-          <h1 className="text-3xl md:text-4xl font-light tracking-wide mb-2">紫</h1>
-          <h2 className={`text-xl ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} font-light`}>Murasaki</h2>
-          <p className={`text-sm ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} mt-2`}>A moment of reflection, a breath of peace</p>
-        </header>
-        
-        <nav className="flex flex-wrap justify-center mb-8">
-          <button 
-            onClick={() => setActiveTab('journal')}
-            className={`flex items-center px-4 py-2 m-1 md:mx-2 rounded-full transition-colors ${
-              activeTab === 'journal' 
-                ? isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-200 text-purple-900' 
-                : isDarkMode ? 'text-purple-300 hover:bg-purple-900' : 'text-purple-700 hover:bg-purple-100'
-            }`}
-          >
-            <Feather size={16} className="mr-2" />
-            Journal
-          </button>
-          <button 
-            onClick={() => setActiveTab('history')}
-            className={`flex items-center px-4 py-2 m-1 md:mx-2 rounded-full transition-colors ${
-              activeTab === 'history' 
-                ? isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-200 text-purple-900' 
-                : isDarkMode ? 'text-purple-300 hover:bg-purple-900' : 'text-purple-700 hover:bg-purple-100'
-            }`}
-          >
-            <Calendar size={16} className="mr-2" />
-            History
-          </button>
-          <button 
-            onClick={() => setActiveTab('trends')}
-            className={`flex items-center px-4 py-2 m-1 md:mx-2 rounded-full transition-colors ${
-              activeTab === 'trends' 
-                ? isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-200 text-purple-900' 
-                : isDarkMode ? 'text-purple-300 hover:bg-purple-900' : 'text-purple-700 hover:bg-purple-100'
-            }`}
-          >
-            <BarChart2 size={16} className="mr-2" />
-            Trends
-          </button>
-        </nav>
-        
-        <div className={`max-w-md mx-auto ${
-          isDarkMode 
-            ? 'bg-purple-900 bg-opacity-80 shadow-lg' 
-            : 'bg-white bg-opacity-80 shadow-lg'
-          } backdrop-blur-sm rounded-lg p-4 md:p-6 mb-8`}>
-          {activeTab === 'journal' && (
-            <>
-              <div className="mb-6 text-center">
-                <div className={`text-sm ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} mb-2`}>Today's Wisdom</div>
-                <div className="italic text-base md:text-lg">"{quote.text}"</div>
-                <div className={`text-sm mt-1 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>— {quote.author}</div>
-              </div>
-              
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <label className={`block text-sm ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} mb-2`}>Today's reflection</label>
-                  <textarea
-                    value={thought}
-                    onChange={(e) => setThought(e.target.value)}
-                    className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none transition-colors ${
-                      isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-50 text-purple-900'
-                    }`}
-                    placeholder="How are you feeling today? (1-3 lines)"
-                    rows="3"
-                  />
-                </div>
-                
-                <div className="mb-6">
-                  <label className={`block text-sm ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} mb-2`}>Mood</label>
-                  <div className="flex justify-between items-center">
-                    <Moon size={16} />
-                    <input
-                      type="range"
-                      min="1"
-                      max="5"
-                      value={mood}
-                      onChange={(e) => setMood(parseInt(e.target.value))}
-                      className={`w-full mx-2 ${isDarkMode ? 'accent-purple-400' : 'accent-purple-700'}`}
-                    />
-                    <Sun size={16} />
-                  </div>
-                  <div 
-                    className="w-full h-2 mt-2 rounded-full transition-colors duration-300" 
-                    style={{ backgroundColor: getMoodColor(mood) }}
-                  />
-                </div>
-                
-                <button 
-                  type="submit" 
-                  className={`w-full py-2 rounded-md transition-colors ${
-                    isDarkMode 
-                      ? 'bg-purple-600 hover:bg-purple-500 text-white' 
-                      : 'bg-purple-600 hover:bg-purple-700 text-white'
-                  }`}
-                >
-                  Save Moment
-                </button>
-              </form>
-            </>
-          )}
+        <div className="container mx-auto px-4 py-8 relative z-10">
+          <div className="flex justify-end space-x-2 mb-4">
+            <button 
+              onClick={toggleMusic}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-purple-800 hover:bg-purple-700' : 'bg-purple-200 hover:bg-purple-300'} transition-colors`}
+              aria-label={isMusicPlaying ? "Pause music" : "Play music"}
+            >
+              {isMusicPlaying ? <Volume2 size={18} /> : <VolumeX size={18} />}
+            </button>
+            <button 
+              onClick={toggleTheme}
+              className={`p-2 rounded-full ${isDarkMode ? 'bg-purple-800 hover:bg-purple-700' : 'bg-purple-200 hover:bg-purple-300'} transition-colors`}
+              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+          </div>
           
-          {activeTab === 'history' && (
-            <div>
-              <h3 className={`text-xl mb-4 font-light ${isDarkMode ? 'text-purple-200' : ''}`}>Your Journey</h3>
-              {entries.length === 0 ? (
-                <p className={`text-center py-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                  Your thoughts will appear here once you start journaling.
-                </p>
-              ) : (
-                <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
-                  {entries.map(entry => (
-                    <div 
-                      key={entry.id} 
-                      className={`p-3 rounded-md border-l-4 shadow-sm ${
-                        isDarkMode ? 'bg-purple-800' : 'bg-white'
+          <header className="text-center mb-8">
+            <h1 className="text-3xl md:text-4xl font-light tracking-wide mb-2">紫</h1>
+            <h2 className={`text-xl ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} font-light`}>Murasaki</h2>
+            <p className={`text-sm ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} mt-2`}>A moment of reflection, a breath of peace</p>
+          </header>
+          
+          <nav className="flex flex-wrap justify-center mb-8">
+            <button 
+              onClick={() => setActiveTab('journal')}
+              className={`flex items-center px-4 py-2 m-1 md:mx-2 rounded-full transition-colors ${
+                activeTab === 'journal' 
+                  ? isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-200 text-purple-900' 
+                  : isDarkMode ? 'text-purple-300 hover:bg-purple-900' : 'text-purple-700 hover:bg-purple-100'
+              }`}
+            >
+              <Feather size={16} className="mr-2" />
+              Journal
+            </button>
+            <button 
+              onClick={() => setActiveTab('history')}
+              className={`flex items-center px-4 py-2 m-1 md:mx-2 rounded-full transition-colors ${
+                activeTab === 'history' 
+                  ? isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-200 text-purple-900' 
+                  : isDarkMode ? 'text-purple-300 hover:bg-purple-900' : 'text-purple-700 hover:bg-purple-100'
+              }`}
+            >
+              <Calendar size={16} className="mr-2" />
+              History
+            </button>
+            <button 
+              onClick={() => setActiveTab('trends')}
+              className={`flex items-center px-4 py-2 m-1 md:mx-2 rounded-full transition-colors ${
+                activeTab === 'trends' 
+                  ? isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-200 text-purple-900' 
+                  : isDarkMode ? 'text-purple-300 hover:bg-purple-900' : 'text-purple-700 hover:bg-purple-100'
+              }`}
+            >
+              <BarChart2 size={16} className="mr-2" />
+              Trends
+            </button>
+          </nav>
+          
+          <div className={`max-w-md mx-auto ${
+            isDarkMode 
+              ? 'bg-purple-900 bg-opacity-80 shadow-lg' 
+              : 'bg-white bg-opacity-80 shadow-lg'
+            } backdrop-blur-sm rounded-lg p-4 md:p-6 mb-8`}>
+            {activeTab === 'journal' && (
+              <>
+                <div className="mb-6 text-center">
+                  <div className={`text-sm ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} mb-2`}>{"Today's Wisdom"}</div>
+                  <div className="italic text-base md:text-lg">{quote.text}</div>
+                  <div className={`text-sm mt-1 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>— {quote.author}</div>
+                </div>
+                
+                <form onSubmit={handleSubmit}>
+                  <div className="mb-4">
+                    <label className={`block text-sm ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} mb-2`}>{"Today's reflection"}</label>
+                    <textarea
+                      value={thought}
+                      onChange={(e) => setThought(e.target.value)}
+                      className={`w-full px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-400 resize-none transition-colors ${
+                        isDarkMode ? 'bg-purple-800 text-purple-100' : 'bg-purple-50 text-purple-900'
                       }`}
-                      style={{ borderLeftColor: getMoodColor(entry.mood) }}
-                    >
-                      <div className={`text-xs mb-1 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                        {formatDate(entry.date)}
-                      </div>
-                      <p>{entry.thought}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-          
-          {activeTab === 'trends' && (
-            <div>
-              <h3 className={`text-xl mb-4 font-light ${isDarkMode ? 'text-purple-200' : ''}`}>Mood Patterns</h3>
-              {entries.length < 3 ? (
-                <p className={`text-center py-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                  Continue journaling to see your mood patterns emerge.
-                </p>
-              ) : (
-                <div>
-                  <div className="flex items-end h-48 mb-2">
-                    {entries.slice(0, 14).reverse().map((entry, index) => (
-                      <div 
-                        key={entry.id}
-                        className="flex-1 mx-1 rounded-t transition-all"
-                        style={{ 
-                          height: `${(entry.mood / 5) * 100}%`,
-                          backgroundColor: getMoodColor(entry.mood)
-                        }}
-                        title={`${formatDate(entry.date)}: ${entry.thought}`}
+                      placeholder="How are you feeling today? (1-3 lines)"
+                      rows={3}
+                    />
+                  </div>
+                  
+                  <div className="mb-6">
+                    <label className={`block text-sm ${isDarkMode ? 'text-purple-300' : 'text-purple-700'} mb-2`}>Mood</label>
+                    <div className="flex justify-between items-center">
+                      <Moon size={16} />
+                      <input
+                        type="range"
+                        min="1"
+                        max="5"
+                        value={mood}
+                        onChange={(e) => setMood(parseInt(e.target.value))}
+                        className={`w-full mx-2 ${isDarkMode ? 'accent-purple-400' : 'accent-purple-700'}`}
                       />
+                      <Sun size={16} />
+                    </div>
+                    <div 
+                      className="w-full h-2 mt-2 rounded-full transition-colors duration-300" 
+                      style={{ backgroundColor: getMoodColor(mood) }}
+                    />
+                  </div>
+                  
+                  <button 
+                    type="submit" 
+                    className={`w-full py-2 rounded-md transition-colors ${
+                      isDarkMode 
+                        ? 'bg-purple-600 hover:bg-purple-500 text-white' 
+                        : 'bg-purple-600 hover:bg-purple-700 text-white'
+                    }`}
+                  >
+                    Save Moment
+                  </button>
+                </form>
+              </>
+            )}
+            
+            {activeTab === 'history' && (
+              <div>
+                <h3 className={`text-xl mb-4 font-light ${isDarkMode ? 'text-purple-200' : ''}`}>Your Journey</h3>
+                {entries.length === 0 ? (
+                  <p className={`text-center py-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                    Your thoughts will appear here once you start journaling.
+                  </p>
+                ) : (
+                  <div className="space-y-4 max-h-96 overflow-y-auto pr-1">
+                    {entries.map(entry => (
+                      <div 
+                        key={entry.id} 
+                        className={`p-3 rounded-md border-l-4 shadow-sm ${
+                          isDarkMode ? 'bg-purple-800' : 'bg-white'
+                        }`}
+                        style={{ borderLeftColor: getMoodColor(entry.mood) }}
+                      >
+                        <div className={`text-xs mb-1 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                          {formatDate(entry.date)}
+                        </div>
+                        <p>{entry.thought}</p>
+                      </div>
                     ))}
                   </div>
-                  <div className={`h-px w-full ${isDarkMode ? 'bg-purple-700' : 'bg-purple-200'}`} />
-                  <div className={`text-xs text-center mt-2 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
-                    Recent entries (newest on right)
+                )}
+              </div>
+            )}
+            
+            {activeTab === 'trends' && (
+              <div>
+                <h3 className={`text-xl mb-4 font-light ${isDarkMode ? 'text-purple-200' : ''}`}>Mood Patterns</h3>
+                {entries.length < 3 ? (
+                  <p className={`text-center py-6 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                    Continue journaling to see your mood patterns emerge.
+                  </p>
+                ) : (
+                  <div>
+                    <div className="flex items-end h-48 mb-2">
+                      {entries.slice(0, 14).reverse().map((entry) => (
+                        <div 
+                          key={entry.id}
+                          className="flex-1 mx-1 rounded-t transition-all"
+                          style={{ 
+                            height: `${(entry.mood / 5) * 100}%`,
+                            backgroundColor: getMoodColor(entry.mood)
+                          }}
+                          title={`${formatDate(entry.date)}: ${entry.thought}`}
+                        />
+                      ))}
+                    </div>
+                    <div className={`h-px w-full ${isDarkMode ? 'bg-purple-700' : 'bg-purple-200'}`} />
+                    <div className={`text-xs text-center mt-2 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+                      Recent entries (newest on right)
+                    </div>
                   </div>
+                )}
+              </div>
+            )}
+          </div>
+          
+          <footer className={`text-center ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} mt-10`}>
+            <div className="mb-4">
+              <p>Murasaki - Find peace in small moments</p>
+              {isMusicPlaying && (
+                <div className="flex items-center justify-center mt-2">
+                  <Music size={14} className="mr-1" />
+                  <span>Ambient music playing</span>
                 </div>
               )}
             </div>
-          )}
+            
+            {/* Enhanced copyright footer */}
+            <div className={`py-4 border-t ${isDarkMode ? 'border-purple-800' : 'border-purple-200'} flex flex-col items-center`}>
+              <p className="font-light tracking-wide text-sm">
+                Designed with <span className="text-purple-500">♥</span> by Sayantan Chowdhury
+              </p>
+              <p className={`mt-1 text-xs ${isDarkMode ? 'text-purple-500' : 'text-purple-400'}`}>
+                © {currentYear} All rights reserved
+              </p>
+            </div>
+          </footer>
         </div>
-        
-        <footer className={`text-center ${isDarkMode ? 'text-purple-400' : 'text-purple-600'} mt-10`}>
-  <div className="mb-4">
-    <p>Murasaki - Find peace in small moments</p>
-    {isMusicPlaying && (
-      <div className="flex items-center justify-center mt-2">
-        <Music size={14} className="mr-1" />
-        <span>Ambient music playing</span>
       </div>
-    )}
-  </div>
-  
-  {/* Enhanced copyright footer */}
-  <div className={`py-4 border-t ${isDarkMode ? 'border-purple-800' : 'border-purple-200'} flex flex-col items-center`}>
-    <p className="font-light tracking-wide text-sm">
-      Designed with <span className="text-purple-500">♥</span> by Sayantan Chowdhury
-    </p>
-    <p className={`mt-1 text-xs ${isDarkMode ? 'text-purple-500' : 'text-purple-400'}`}>
-      © {currentYear} All rights reserved
-    </p>
-  </div>
-</footer>
-      </div>
-    </div>
     </ProtectedRoute>
-    
   );
 }

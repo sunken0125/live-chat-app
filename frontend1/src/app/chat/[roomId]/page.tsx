@@ -39,7 +39,7 @@ export default function ChatPage() {
       };
       reconnect();
     }
-  }, [socket, isConnected]);
+  }, [socket, isConnected,refreshAccessToken]);
 
 
   // Rejoin room and THEN fetch chat
@@ -134,7 +134,7 @@ export default function ChatPage() {
   return (
     <ProtectedRoute>
       <div>
-        <h2>Hey {username}, Let's chat!!</h2>
+        <h2>Hey {username}, {"Let's chat!!"}</h2>
         <h5>You are in a room with {otherUser}</h5>
 
         <input
