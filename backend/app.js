@@ -127,7 +127,7 @@ app.post('/logout',(req,res)=>{
     res.clearCookie('refreshToken',{
         httpOnly: true, 
         secure: true, 
-        sameSite: 'Strict',
+        sameSite: 'None',
         path: '/refresh-token',
     });
     res.status(200).json({message: 'Logged out'});
